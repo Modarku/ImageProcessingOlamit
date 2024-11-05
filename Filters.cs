@@ -235,7 +235,6 @@ namespace ImageProcessingOlamit
             int grayGreenValue = (green.R + green.G + green.B) / 3;
             int threshold = 5;
 
-            // Lock bits for both images for efficient processing
             BitmapData loadedData = loaded.LockBits(new Rectangle(0, 0, loaded.Width, loaded.Height),
                                                     ImageLockMode.ReadOnly, PixelFormat.Format24bppRgb);
             BitmapData backgroundData = backgroundLoaded.LockBits(new Rectangle(0, 0, backgroundLoaded.Width, backgroundLoaded.Height),
@@ -243,40 +242,33 @@ namespace ImageProcessingOlamit
             BitmapData processedData = processed.LockBits(new Rectangle(0, 0, processed.Width, processed.Height),
                                                           ImageLockMode.WriteOnly, PixelFormat.Format24bppRgb);
 
-            // Calculate the number of bytes per row (stride) and the total byte count
             int stride = loadedData.Stride;
             int byteCount = stride * loaded.Height;
 
-            // Create byte arrays to hold pixel data
             byte[] loadedPixels = new byte[byteCount];
             byte[] backgroundPixels = new byte[byteCount];
             byte[] processedPixels = new byte[byteCount];
 
-            // Copy data to the byte arrays
             Marshal.Copy(loadedData.Scan0, loadedPixels, 0, byteCount);
             Marshal.Copy(backgroundData.Scan0, backgroundPixels, 0, byteCount);
 
-            // Process each pixel in the byte arrays
             for (int y = 0; y < loaded.Height; y++)
             {
                 for (int x = 0; x < loaded.Width; x++)
                 {
-                    int pixelIndex = y * stride + x * 3; // Calculate pixel index
+                    int pixelIndex = y * stride + x * 3;
 
-                    // Calculate grayscale value for the loaded pixel
                     int grayValue = (loadedPixels[pixelIndex] + loadedPixels[pixelIndex + 1] + loadedPixels[pixelIndex + 2]) / 3;
                     int subtractValue = Math.Abs(grayValue - grayGreenValue);
 
                     if (subtractValue < threshold)
                     {
-                        // Use the background pixel if below threshold
                         processedPixels[pixelIndex] = backgroundPixels[pixelIndex];
                         processedPixels[pixelIndex + 1] = backgroundPixels[pixelIndex + 1];
                         processedPixels[pixelIndex + 2] = backgroundPixels[pixelIndex + 2];
                     }
                     else
                     {
-                        // Use the original loaded pixel
                         processedPixels[pixelIndex] = loadedPixels[pixelIndex];
                         processedPixels[pixelIndex + 1] = loadedPixels[pixelIndex + 1];
                         processedPixels[pixelIndex + 2] = loadedPixels[pixelIndex + 2];
@@ -284,10 +276,8 @@ namespace ImageProcessingOlamit
                 }
             }
 
-            // Copy the processed pixel data back to the bitmap
             Marshal.Copy(processedPixels, 0, processedData.Scan0, byteCount);
 
-            // Unlock the bitmaps
             loaded.UnlockBits(loadedData);
             backgroundLoaded.UnlockBits(backgroundData);
             processed.UnlockBits(processedData);
